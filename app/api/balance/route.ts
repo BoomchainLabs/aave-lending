@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTokenBalance } from '@/lib/web3';
+import { getBalanceCache, setBalanceCache } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   const userAddress = request.nextUrl.searchParams.get('user');
@@ -20,7 +21,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const balance = await getTokenBalance(userAddress, tokenAddress);
+    // Try cache first
+    let balance = await getBalanceCache(userAddress, tokenAddress);
+
+    if (!balance) {
+      // Fetch fresh balance
+      balance = await getTokenBalance(userAddress, tokenAddress);
+      // Cache it
+      await setBalanceCache(userAddress, tokenAddress, balance);
+    }
+
     return NextResponse.json({ balance });
   } catch (error) {
     console.error('[v0] API error:', error);

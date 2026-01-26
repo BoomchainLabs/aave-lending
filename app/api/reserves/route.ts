@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getReserveData } from '@/lib/web3';
 import { TOKENS } from '@/lib/contracts';
+import { getReserveDataCache, setReserveDataCache } from '@/lib/cache';
 
 export async function GET() {
   try {
@@ -10,7 +11,16 @@ export async function GET() {
       tokenAddresses.map(async (address) => {
         const token = Object.values(TOKENS).find(t => t.address === address);
         try {
-          const data = await getReserveData(address);
+          // Try cache first
+          let data = await getReserveDataCache(address);
+          
+          if (!data) {
+            // Fetch fresh data
+            data = await getReserveData(address);
+            // Cache it
+            await setReserveDataCache(address, data);
+          }
+
           return {
             asset: token,
             ...data,
