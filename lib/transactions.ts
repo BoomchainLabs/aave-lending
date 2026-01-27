@@ -66,6 +66,48 @@ export async function approveToken(
 }
 
 /**
+ * Execute approval transaction (returns transaction data for client signing)
+ */
+export async function executeApprove(
+  userAddress: string,
+  tokenAddress: string,
+  amount: string,
+  decimals: number = 18
+): Promise<{
+  hash: string;
+  from: string;
+  to: string;
+  data: string;
+  value: string;
+}> {
+  try {
+    // Create token contract interface for building transaction data
+    const tokenInterface = new ethers.Interface(ERC20_ABI);
+    const amountToApprove = ethers.parseUnits(amount, decimals);
+
+    // Encode the approve function call
+    const data = tokenInterface.encodeFunctionData('approve', [
+      CONTRACTS.POOL,
+      amountToApprove,
+    ]);
+
+    return {
+      hash: '', // Hash will be set after signing
+      from: userAddress,
+      to: tokenAddress,
+      data: data,
+      value: '0',
+    };
+  } catch (error) {
+    throw new TransactionError(
+      'APPROVE_PREP_ERROR',
+      'Failed to prepare approval transaction',
+      error as Error
+    );
+  }
+}
+
+/**
  * Execute deposit on Aave Pool
  */
 export async function executeDeposit(
