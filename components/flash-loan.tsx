@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,17 +8,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Zap, Code2, DollarSign } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TOKENS } from '@/lib/contracts';
+import { useTransactionMonitor } from '@/hooks/use-transaction-monitor';
 
 interface FlashLoanToolProps {
   account: string | null;
 }
 
-const flashLoanAssets = [
-  { symbol: 'ETH', available: 50000, premium: 0.05 },
-  { symbol: 'USDC', available: 100000000, premium: 0.05 },
-  { symbol: 'DAI', available: 50000000, premium: 0.05 },
-  { symbol: 'USDT', available: 30000000, premium: 0.05 },
-];
+interface ReserveData {
+  asset: any;
+  availableLiquidity: string;
+  liquidityRate: number;
+}
 
 const codeExamples = {
   arbitrage: `pragma solidity ^0.8.0;
@@ -91,35 +92,106 @@ contract LiquidationBot is IFlashLoanReceiver {
 }`,
 };
 
+const FLASH_LOAN_PREMIUM = 0.0005; // 0.05%
+
 export default function FlashLoanTool({ account }: FlashLoanToolProps) {
-  const [selectedAsset, setSelectedAsset] = useState(flashLoanAssets[0]);
+  const [reserves, setReserves] = useState<ReserveData[]>([]);
+  const [selectedToken, setSelectedToken] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedExample, setSelectedExample] = useState<'arbitrage' | 'liquidation'>('arbitrage');
+  const { executeTransaction, status } = useTransactionMonitor();
+  const [selectedAsset, setSelectedAsset] = useState<any>(null); // Declare selectedAsset
+  const [premium, setPremium] = useState<number>(FLASH_LOAN_PREMIUM); // Declare premium
 
-  const premium = selectedAsset.premium;
-  const premiumAmount = amount ? parseFloat(amount) * premium : 0;
+  useEffect(() => {
+    fetchReserves();
+    if (Object.keys(TOKENS).length > 0) {
+      setSelectedToken(Object.keys(TOKENS)[0]);
+    }
+  }, []);
+
+  const fetchReserves = async () => {
+    try {
+      const response = await fetch('/api/reserves');
+      if (!response.ok) throw new Error('Failed to fetch reserves');
+      const data = await response.json();
+      setReserves(data);
+      setError(null);
+    } catch (err) {
+      console.error('[v0] Error fetching reserves:', err);
+      setError('Failed to load reserve data');
+    }
+  };
+
+  const activeReserve = reserves.find(
+    r => r.asset?.address?.toLowerCase() === TOKENS[selectedToken]?.address?.toLowerCase()
+  );
+
+  const availableLiquidity = activeReserve
+    ? parseFloat(activeReserve.availableLiquidity)
+    : 0;
+  
+  const premiumAmount = amount ? parseFloat(amount) * FLASH_LOAN_PREMIUM : 0;
   const totalRepay = amount ? parseFloat(amount) + premiumAmount : 0;
 
   const handleExecuteFlashLoan = async () => {
-    if (!amount || !account) return;
+    if (!amount || !account || !selectedToken) {
+      setError('Please fill in all required fields');
+      return;
+    }
     setIsLoading(true);
+    setError(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('/api/transactions/flash-loan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userAddress: account,
+          tokenAddress: TOKENS[selectedToken]?.address || '',
+          amount,
+        }),
+      });
+      if (!response.ok) throw new Error('Flash loan execution failed');
       setAmount('');
-    } catch (error) {
-      console.error('Flash loan execution failed:', error);
+      await executeTransaction();
+      await fetchReserves();
+    } catch (err: any) {
+      setError(err.message || 'Flash loan execution failed');
+      console.error('[v0] Flash loan error:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (!account) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Flash Loans</h1>
+          <p className="text-muted-foreground mt-2">Access unlimited liquidity for one transaction</p>
+        </div>
+        <Card className="p-8 text-center">
+          <p className="text-muted-foreground">Please connect your wallet to use flash loans</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Flash Loans</h1>
-        <p className="text-muted-foreground mt-2">Access unlimited liquidity for one transaction</p>
+        <p className="text-muted-foreground mt-2">Access unlimited liquidity for one transaction with {(FLASH_LOAN_PREMIUM * 100).toFixed(2)}% premium</p>
       </div>
+
+      {error && (
+        <Alert className="bg-destructive/10 border-destructive/50">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-destructive">{error}</AlertDescription>
+        </Alert>
+      )}
 
       <Alert className="border-primary/50 bg-primary/5">
         <Zap className="h-4 w-4 text-primary" />
@@ -138,20 +210,26 @@ export default function FlashLoanTool({ account }: FlashLoanToolProps) {
             <div className="space-y-3">
               <label className="text-sm font-medium text-foreground">Select Asset</label>
               <div className="grid grid-cols-2 gap-2">
-                {flashLoanAssets.map((asset) => (
-                  <button
-                    key={asset.symbol}
-                    onClick={() => setSelectedAsset(asset)}
-                    className={`p-3 rounded-lg border-2 transition-all text-center ${
-                      selectedAsset.symbol === asset.symbol
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <p className="font-semibold text-foreground">{asset.symbol}</p>
-                    <p className="text-xs text-muted-foreground">{(asset.available / 1000000).toFixed(0)}M available</p>
-                  </button>
-                ))}
+                {Object.entries(TOKENS).map(([key, token]) => {
+                  const reserve = reserves.find(
+                    r => r.asset?.address?.toLowerCase() === token.address?.toLowerCase()
+                  );
+                  const available = reserve ? parseFloat(reserve.availableLiquidity) : 0;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedToken(key)}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        selectedToken === key
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <p className="font-semibold text-foreground">{token.symbol}</p>
+                      <p className="text-xs text-muted-foreground">{(available / 1000000).toFixed(1)}M available</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -168,7 +246,7 @@ export default function FlashLoanTool({ account }: FlashLoanToolProps) {
                 />
                 <Button
                   variant="outline"
-                  onClick={() => setAmount((selectedAsset.available / 1000000).toFixed(0))}
+                  onClick={() => setAmount(availableLiquidity.toString())}
                   size="sm"
                 >
                   Max
@@ -183,15 +261,15 @@ export default function FlashLoanTool({ account }: FlashLoanToolProps) {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Loan Amount</span>
-                    <span className="font-medium text-foreground">{amount} {selectedAsset.symbol}</span>
+                    <span className="font-medium text-foreground">{amount} {TOKENS[selectedToken]?.symbol}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Premium ({premium * 100}%)</span>
-                    <span className="font-medium text-accent">{premiumAmount.toFixed(6)} {selectedAsset.symbol}</span>
+                    <span className="text-muted-foreground">Premium ({(FLASH_LOAN_PREMIUM * 100).toFixed(2)}%)</span>
+                    <span className="font-medium text-accent">{premiumAmount.toFixed(6)} {TOKENS[selectedToken]?.symbol}</span>
                   </div>
                   <div className="border-t border-border pt-2 flex justify-between">
                     <span className="text-muted-foreground font-medium">Total Repay</span>
-                    <span className="font-bold text-foreground">{totalRepay.toFixed(6)} {selectedAsset.symbol}</span>
+                    <span className="font-bold text-foreground">{totalRepay.toFixed(6)} {TOKENS[selectedToken]?.symbol}</span>
                   </div>
                 </div>
               </Card>
@@ -259,17 +337,17 @@ export default function FlashLoanTool({ account }: FlashLoanToolProps) {
             {
               title: 'Arbitrage',
               desc: 'Exploit price differences across protocols without initial capital',
-              icon: <TrendingUp className="w-6 h-6" />,
+              icon: <span className="w-6 h-6">Arbitrage Icon</span>, // Placeholder for icon
             },
             {
               title: 'Liquidation',
               desc: 'Liquidate underwater positions to earn liquidation bonus',
-              icon: <DollarSign className="w-6 h-6" />,
+              icon: <span className="w-6 h-6">Liquidation Icon</span>, // Placeholder for icon
             },
             {
               title: 'Self-liquidation',
               desc: 'Close positions and repay debt efficiently in one transaction',
-              icon: <Zap className="w-6 h-6" />,
+              icon: <span className="w-6 h-6">Self-liquidation Icon</span>, // Placeholder for icon
             },
           ].map((useCase) => (
             <div key={useCase.title} className="p-4 bg-secondary/50 rounded-lg space-y-3">
@@ -313,5 +391,3 @@ export default function FlashLoanTool({ account }: FlashLoanToolProps) {
     </div>
   );
 }
-
-import { TrendingUp } from 'lucide-react';

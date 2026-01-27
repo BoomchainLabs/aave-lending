@@ -16,23 +16,32 @@ interface AccountData {
   healthFactor: string;
 }
 
-const mockAnalyticsData = [
-  { month: 'Jan', tvl: 2400, apy: 4.2 },
-  { month: 'Feb', tvl: 3210, apy: 4.5 },
-  { month: 'Mar', tvl: 2990, apy: 4.3 },
-  { month: 'Apr', tvl: 3908, apy: 4.8 },
-  { month: 'May', tvl: 4800, apy: 5.1 },
-  { month: 'Jun', tvl: 3800, apy: 4.9 },
-];
-
-const reserveData = [
-  { name: 'USDC', value: 45, apy: 3.2 },
-  { name: 'DAI', value: 30, apy: 2.8 },
-  { name: 'USDT', value: 15, apy: 3.1 },
-  { name: 'ETH', value: 10, apy: 4.5 },
+// Mock data will be replaced by real API calls
+const analyticsDataFallback = [
+  { month: 'Jan', tvl: 0, apy: 0 },
+  { month: 'Feb', tvl: 0, apy: 0 },
+  { month: 'Mar', tvl: 0, apy: 0 },
+  { month: 'Apr', tvl: 0, apy: 0 },
+  { month: 'May', tvl: 0, apy: 0 },
+  { month: 'Jun', tvl: 0, apy: 0 },
 ];
 
 const COLORS = ['#7c3aed', '#10b981', '#f59e0b', '#ef4444'];
+
+const mockAnalyticsData = [
+  { month: 'Jan', tvl: 100, apy: 5 },
+  { month: 'Feb', tvl: 120, apy: 6 },
+  { month: 'Mar', tvl: 150, apy: 7 },
+  { month: 'Apr', tvl: 130, apy: 6 },
+  { month: 'May', tvl: 140, apy: 7 },
+  { month: 'Jun', tvl: 160, apy: 8 },
+];
+
+const reserveData = [
+  { name: 'Reserve A', value: 30 },
+  { name: 'Reserve B', value: 20 },
+  { name: 'Reserve C', value: 50 },
+];
 
 interface DashboardContentProps {
   account: string | null;
