@@ -1,12 +1,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { BarChart3, Wallet, TrendingUp, Zap } from 'lucide-react';
+import { BarChart3, Wallet, TrendingUp, Zap, Crown } from 'lucide-react';
 
 interface NavigationProps {
   account: string | null;
-  activeTab: 'dashboard' | 'lending' | 'portfolio' | 'flash-loan';
-  onTabChange: (tab: 'dashboard' | 'lending' | 'portfolio' | 'flash-loan') => void;
+  activeTab: 'dashboard' | 'lending' | 'portfolio' | 'flash-loan' | 'premium';
+  onTabChange: (tab: 'dashboard' | 'lending' | 'portfolio' | 'flash-loan' | 'premium') => void;
 }
 
 export default function Navigation({ account, activeTab, onTabChange }: NavigationProps) {
@@ -61,6 +61,15 @@ export default function Navigation({ account, activeTab, onTabChange }: Navigati
             >
               <Zap className="w-4 h-4" />
               Flash Loans
+            </Button>
+            <Button
+              variant={activeTab === 'premium' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onTabChange('premium')}
+              className="gap-2"
+            >
+              <Crown className="w-4 h-4" />
+              Premium
             </Button>
           </nav>
 

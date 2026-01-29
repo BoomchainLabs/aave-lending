@@ -16,52 +16,51 @@ interface AccountData {
   healthFactor: string;
 }
 
-// Mock data will be replaced by real API calls
-const analyticsDataFallback = [
-  { month: 'Jan', tvl: 0, apy: 0 },
-  { month: 'Feb', tvl: 0, apy: 0 },
-  { month: 'Mar', tvl: 0, apy: 0 },
-  { month: 'Apr', tvl: 0, apy: 0 },
-  { month: 'May', tvl: 0, apy: 0 },
-  { month: 'Jun', tvl: 0, apy: 0 },
-];
-
 const COLORS = ['#7c3aed', '#10b981', '#f59e0b', '#ef4444'];
-
-const mockAnalyticsData = [
-  { month: 'Jan', tvl: 100, apy: 5 },
-  { month: 'Feb', tvl: 120, apy: 6 },
-  { month: 'Mar', tvl: 150, apy: 7 },
-  { month: 'Apr', tvl: 130, apy: 6 },
-  { month: 'May', tvl: 140, apy: 7 },
-  { month: 'Jun', tvl: 160, apy: 8 },
-];
-
-const reserveData = [
-  { name: 'Reserve A', value: 30 },
-  { name: 'Reserve B', value: 20 },
-  { name: 'Reserve C', value: 50 },
-];
 
 interface DashboardContentProps {
   account: string | null;
 }
 
+interface ReserveInfo {
+  asset: string;
+  value: number;
+  tvl: number;
+  apy: number;
+}
+
 export default function DashboardContent({ account }: DashboardContentProps) {
   const [accountData, setAccountData] = useState<AccountData | null>(null);
+  const [reserves, setReserves] = useState<ReserveInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
-      if (!account) return;
+      if (!account) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
-        const data = await getUserAccountData(account);
-        setAccountData(data);
+        const [accountResponse, reservesResponse] = await Promise.all([
+          fetch(`/api/user/account?address=${account}`),
+          fetch('/api/reserves'),
+        ]);
+
+        if (!accountResponse.ok || !reservesResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const accountDataResponse = await accountResponse.json();
+        const reservesData = await reservesResponse.json();
+        
+        setAccountData(accountDataResponse);
+        setReserves(reservesData.slice(0, 3)); // Top 3 reserves
+        setError(null);
       } catch (err) {
-        setError('Failed to load account data');
-        console.error(err);
+        setError('Failed to load dashboard data');
+        console.error('[v0] Dashboard error:', err);
       } finally {
         setLoading(false);
       }
@@ -154,83 +153,85 @@ export default function DashboardContent({ account }: DashboardContentProps) {
       {accountData && (
         <>
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  TVL & APY Trends
-                </h2>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={mockAnalyticsData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
-                    <XAxis dataKey="month" stroke="#8b949e" />
-                    <YAxis stroke="#8b949e" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#161b22',
-                        border: '1px solid #30363d',
-                        borderRadius: '6px',
-                      }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="tvl" stroke="#7c3aed" name="TVL ($M)" strokeWidth={2} />
-                    <Line type="monotone" dataKey="apy" stroke="#10b981" name="APY (%)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+          {reserves.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Reserve APY Comparison
+                  </h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={reserves}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
+                      <XAxis dataKey="asset" stroke="#8b949e" />
+                      <YAxis stroke="#8b949e" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#161b22',
+                          border: '1px solid #30363d',
+                          borderRadius: '6px',
+                        }}
+                      />
+                      <Bar dataKey="apy" fill="#7c3aed" name="APY (%)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
 
-            <Card className="p-6">
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground">Reserve Distribution</h2>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={reserveData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name} ${value}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {reserveData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#161b22',
-                        border: '1px solid #30363d',
-                        borderRadius: '6px',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-          </div>
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground">Reserve TVL Distribution</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={reserves}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ asset, value }) => `${asset} ${value}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {reserves.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#161b22',
+                          border: '1px solid #30363d',
+                          borderRadius: '6px',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            </div>
+          )}
 
           {/* Top Reserves */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Top Reserves</h2>
-            <div className="space-y-3">
-              {reserveData.map((reserve) => (
-                <div key={reserve.name} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-foreground">{reserve.name}</p>
-                    <p className="text-sm text-muted-foreground">APY: {reserve.apy}%</p>
+          {reserves.length > 0 && (
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">Top Reserves</h2>
+              <div className="space-y-3">
+                {reserves.map((reserve) => (
+                  <div key={reserve.asset} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-foreground">{reserve.asset}</p>
+                      <p className="text-sm text-muted-foreground">TVL: ${(reserve.tvl / 1000000).toFixed(1)}M</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-accent">{reserve.value}%</p>
+                      <p className="text-xs text-muted-foreground">APY: {reserve.apy.toFixed(2)}%</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-accent">{reserve.value}%</p>
-                    <p className="text-xs text-muted-foreground">of reserves</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* Analytics Section */}
           <Analytics />

@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, Zap, Grid3x3 } from 'lucide-react';
+import { Wallet, TrendingUp, Zap, Grid3x3, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { connectWallet, getProvider } from '@/lib/web3';
 import DashboardContent from '@/components/dashboard';
 import LendingInterface from '@/components/lending';
 import PortfolioTracker from '@/components/portfolio';
 import FlashLoanTool from '@/components/flash-loan';
+import PremiumFeatures from '@/components/premium-features';
 import Navigation from '@/components/navigation';
 
-type TabType = 'dashboard' | 'lending' | 'portfolio' | 'flash-loan';
+type TabType = 'dashboard' | 'lending' | 'portfolio' | 'flash-loan' | 'premium';
 
 export default function Home() {
   const [account, setAccount] = useState<string | null>(null);
@@ -147,6 +148,7 @@ export default function Home() {
         {activeTab === 'lending' && <LendingInterface account={account} />}
         {activeTab === 'portfolio' && <PortfolioTracker account={account} />}
         {activeTab === 'flash-loan' && <FlashLoanTool account={account} />}
+        {activeTab === 'premium' && <PremiumFeatures account={account} />}
       </main>
     </div>
   );

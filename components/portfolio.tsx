@@ -18,18 +18,7 @@ interface AccountData {
   healthFactor: string;
 }
 
-const mockPositions = [
-  { asset: 'ETH', amount: 2.5, value: 8750, apy: 5, change24h: 10, type: 'deposit' },
-  { asset: 'USDC', amount: 1000, value: 1000, apy: 10, change24h: -5, type: 'borrow' },
-  { asset: 'DAI', amount: 5000, value: 5000, apy: 8, change24h: 0, type: 'deposit' },
-];
 
-const mockRewards = [
-  { asset: 'ETH', earned: 200, value: 400 },
-  { asset: 'USDC', earned: 100, value: 200 },
-];
-
-const totalRewardsValue = 650;
 
 export default function PortfolioTracker({ account }: PortfolioTrackerProps) {
   const [accountData, setAccountData] = useState<AccountData | null>(null);
