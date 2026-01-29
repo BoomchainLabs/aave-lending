@@ -34,7 +34,7 @@ A production-ready DeFi lending, borrowing, and trading platform built on Ethere
 
 Create environment variables in the Vars section of your Vercel project:
 
-```env
+\`\`\`env
 # Required: Ethereum RPC Provider
 NEXT_PUBLIC_INFURA_API_KEY=your_infura_api_key
 
@@ -47,15 +47,15 @@ UPSTASH_REDIS_REST_TOKEN=your_redis_rest_token
 
 # Optional: Debugging
 DEBUG=false
-```
+\`\`\`
 
 ## Getting Started
 
 ### 1. Install Dependencies
 
-```bash
+\`\`\`bash
 npm install
-```
+\`\`\`
 
 ### 2. Set Environment Variables
 
@@ -66,9 +66,9 @@ Configure the following in your Vercel project settings under "Vars":
 
 ### 3. Run Development Server
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -146,17 +146,17 @@ All errors are logged with context for debugging.
 3. Add environment variables in Vercel settings
 4. Deploy
 
-```bash
+\`\`\`bash
 vercel deploy
-```
+\`\`\`
 
 ## Monitoring & Logging
 
 The platform includes a structured logging system accessible in browser console:
 
-```javascript
+\`\`\`javascript
 [2024-01-27T10:30:45.123Z] [INFO] Transaction added {id: "0x...", status: "pending", hash: "0x..."}
-```
+\`\`\`
 
 ## Security Considerations
 

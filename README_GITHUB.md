@@ -52,23 +52,23 @@ Before you begin, ensure you have the following installed:
 ## Installation
 
 ### 1. Clone the Repository
-```bash
+\`\`\`bash
 git clone https://github.com/yourusername/defi-lending-platform.git
 cd defi-lending-platform
-```
+\`\`\`
 
 ### 2. Install Dependencies
-```bash
+\`\`\`bash
 npm install
 # or
 yarn install
-```
+\`\`\`
 
 ### 3. Set Up Environment Variables
 
 Create a `.env.local` file in the root directory with the following variables:
 
-```env
+\`\`\`env
 # Upstash Redis Configuration
 UPSTASH_REDIS_REST_URL=your_upstash_redis_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
@@ -82,14 +82,14 @@ NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
 
 # Option 3: QuickNode
 NEXT_PUBLIC_QUICKNODE_RPC_URL=your_quicknode_rpc_url
-```
+\`\`\`
 
 ### 4. Run Development Server
-```bash
+\`\`\`bash
 npm run dev
 # or
 yarn dev
-```
+\`\`\`
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
@@ -178,16 +178,16 @@ The application provides several API endpoints for data fetching and transaction
 ### Data Endpoints
 
 #### Get User Account Data
-```
+\`\`\`
 GET /api/user/account?address=0x...
-```
+\`\`\`
 Returns user's collateral, debt, available borrows, and health factor.
 
 **Query Parameters:**
 - `address` (required) - Ethereum address in 0x format
 
 **Response:**
-```json
+\`\`\`json
 {
   "totalCollateral": "10500.25",
   "totalDebt": "3000.50",
@@ -195,16 +195,16 @@ Returns user's collateral, debt, available borrows, and health factor.
   "ltv": 0.285,
   "healthFactor": "3.5"
 }
-```
+\`\`\`
 
 #### Get Reserve Data
-```
+\`\`\`
 GET /api/reserves
-```
+\`\`\`
 Returns data for all available lending reserves.
 
 **Response:**
-```json
+\`\`\`json
 [
   {
     "asset": {
@@ -219,12 +219,12 @@ Returns data for all available lending reserves.
     "totalVariableDebt": "5000000"
   }
 ]
-```
+\`\`\`
 
 #### Get Token Balance
-```
+\`\`\`
 GET /api/balance?user=0x...&token=0x...
-```
+\`\`\`
 Returns user's balance for a specific token.
 
 **Query Parameters:**
@@ -232,109 +232,109 @@ Returns user's balance for a specific token.
 - `token` (required) - Token contract address
 
 **Response:**
-```json
+\`\`\`json
 {
   "balance": "1000.50"
 }
-```
+\`\`\`
 
 ### Transaction Endpoints
 
 #### Deposit
-```
+\`\`\`
 POST /api/transactions/deposit
-```
+\`\`\`
 Prepares a deposit transaction.
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "userAddress": "0x...",
   "tokenAddress": "0x...",
   "amount": "1000"
 }
-```
+\`\`\`
 
 #### Withdraw
-```
+\`\`\`
 POST /api/transactions/withdraw
-```
+\`\`\`
 Prepares a withdrawal transaction.
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "userAddress": "0x...",
   "tokenAddress": "0x...",
   "amount": "500"
 }
-```
+\`\`\`
 
 #### Borrow
-```
+\`\`\`
 POST /api/transactions/borrow
-```
+\`\`\`
 Prepares a borrow transaction.
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "userAddress": "0x...",
   "tokenAddress": "0x...",
   "amount": "1000",
   "interestRateMode": 2
 }
-```
+\`\`\`
 
 #### Repay
-```
+\`\`\`
 POST /api/transactions/repay
-```
+\`\`\`
 Prepares a repayment transaction.
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "userAddress": "0x...",
   "tokenAddress": "0x...",
   "amount": "500"
 }
-```
+\`\`\`
 
 #### Flash Loan
-```
+\`\`\`
 POST /api/transactions/flash-loan
-```
+\`\`\`
 Prepares a flash loan transaction.
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "userAddress": "0x...",
   "tokenAddress": "0x...",
   "amount": "10000"
 }
-```
+\`\`\`
 
 #### Approve Token
-```
+\`\`\`
 POST /api/transactions/approve
-```
+\`\`\`
 Prepares an ERC20 token approval transaction.
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "userAddress": "0x...",
   "tokenAddress": "0x...",
   "amount": "1000"
 }
-```
+\`\`\`
 
 ## Architecture
 
 ### Directory Structure
-```
+\`\`\`
 defi-lending-platform/
 ├── app/
 │   ├── api/                    # API route handlers
@@ -371,7 +371,7 @@ defi-lending-platform/
 │   └── use-notification.ts    # Notification management
 ├── public/                    # Static assets
 └── package.json              # Dependencies
-```
+\`\`\`
 
 ### Data Flow
 
@@ -419,17 +419,17 @@ All errors are logged with context and returned to users via toast notifications
 
 ### Deploy to Self-Hosted Server
 
-```bash
+\`\`\`bash
 # Build for production
 npm run build
 
 # Start production server
 npm run start
-```
+\`\`\`
 
 ### Docker Deployment
 
-```dockerfile
+\`\`\`dockerfile
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
@@ -437,7 +437,7 @@ RUN npm ci --only=production
 COPY . .
 RUN npm run build
 CMD ["npm", "start"]
-```
+\`\`\`
 
 ## Performance Optimization
 

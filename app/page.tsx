@@ -63,12 +63,15 @@ export default function Home() {
       const addr = await connectWallet();
       setAccount(addr);
       setIsConnected(true);
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
+    } catch (error: any) {
+      console.error('Failed to connect wallet:', error?.message);
+      alert(error?.message || 'Failed to connect wallet. Please make sure MetaMask is installed.');
     } finally {
       setIsConnecting(false);
     }
   }
+
+  const hasWeb3Provider = typeof window !== 'undefined' && !!window.ethereum;
 
   if (!isConnected) {
     return (
@@ -86,14 +89,35 @@ export default function Home() {
             </p>
           </div>
 
+          {!hasWeb3Provider && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-left space-y-3">
+              <p className="text-sm font-medium text-destructive">Web3 Provider Not Detected</p>
+              <p className="text-xs text-muted-foreground">
+                To use this platform, you need a Web3 wallet like MetaMask. Install the browser extension to get started.
+              </p>
+              <a
+                href="https://metamask.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-xs text-primary hover:underline font-medium"
+              >
+                Install MetaMask →
+              </a>
+            </div>
+          )}
+
           <Button
             onClick={handleConnect}
-            disabled={isConnecting}
+            disabled={isConnecting || !hasWeb3Provider}
             size="lg"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Wallet className="mr-2 h-5 w-5" />
-            {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+            {!hasWeb3Provider
+              ? 'Install Web3 Wallet'
+              : isConnecting
+              ? 'Connecting...'
+              : 'Connect Wallet'}
           </Button>
 
           <div className="grid grid-cols-3 gap-4 pt-8">
